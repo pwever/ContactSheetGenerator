@@ -13,10 +13,11 @@ require "mini_exiftool"
 def print_help
   p "Usage:"
   p "ruby %s [-b] folder_path [folder_path]" % __FILE__
+  p "-b draw background"
 end
 
 CONTACTSHEET_FILENAME = "Contactsheet.pdf"
-ACCEPTED_IMAGE_EXTENSIONS = "jpg jpeg gif png".split(" ").map {|ext| ".%s" % ext}
+ACCEPTED_IMAGE_EXTENSIONS = "jpg jpeg png".split(" ").map {|ext| ".%s" % ext}
 
 COLS = 8
 ROWS = 14

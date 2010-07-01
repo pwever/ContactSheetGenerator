@@ -11,7 +11,7 @@ THUMB_SIZES   = [[1200,800],[300,200]]
 ICON_PREFIX   = "_icons_"
 ICON_POSTFIX  = "-icon"
 ICON_SIZE     = 75 # => for flickr style cropping
-IMG_EXTENSIONS = "jpg jpeg gif png crw cr2 raf orf".split(" ").map {|ext| ".%s" % ext}
+IMG_EXTENSIONS = "jpg jpeg gif png".split(" ").map {|ext| ".%s" % ext} # crw cr2 raf orf
 
 
 
@@ -41,6 +41,7 @@ class ImageFolder
       @image_files.each do |file|
         components = file.split(".")
         components[-2] += THUMB_POSTFIX
+        components[-1] = "jpg"
         outfilename = File.join(thumb_folder, components.join("."))
         unless (File.exists?(outfilename))
           img = Magick::Image.read(File.join(@source_folder, file)).first
@@ -61,6 +62,7 @@ class ImageFolder
     @image_files.each do |file|
       components = file.split(".")
       components[-2] += ICON_POSTFIX
+      components[-1] = "jpg"
       outfilename = File.join(icon_folder, components.join("."))
       unless (File.exists?(outfilename))
         img = Magick::Image.read(File.join(@source_folder, file)).first
