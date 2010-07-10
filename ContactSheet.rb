@@ -5,31 +5,35 @@ require "pdf/writer"
 require "RMagick"
 require "mini_exiftool"
 
-#############
-# Ruby script to generate a pdf contact sheet from a folder of image
-# PDF only supports jpg and png files
-#############
 
-def print_help
-  p "Usage:"
-  p "ruby %s [-b] folder_path [folder_path]" % __FILE__
-  p "-b draw background"
-end
 
-CONTACTSHEET_FILENAME = "Contactsheet.pdf"
+# Settings
+CONTACTSHEET_FILENAME = "Contactsheet.pdf" # relative to the script location
 ACCEPTED_IMAGE_EXTENSIONS = "jpg jpeg png".split(" ").map {|ext| ".%s" % ext}
-
 COLS = 8
 ROWS = 14
 
-CANVAS_W_CM = TABLOID_W_CM = 27.94
-CANVAS_H_CM = TABLOID_H_CM = 43.18
+# Tabloid
+CANVAS_W_CM = 27.94
+CANVAS_H_CM = 43.18
 
+# Text
 FONT = "Helvetica"
 FONT_SIZE = 6
 FONT_COLOR = Color::RGB::Gray
 BORDER_COLOR = Color::RGB.from_html("666")
 BACKGROUND_COLOR = Color::RGB::Black
+
+
+
+
+def print_help
+  puts "Usage:"
+  puts "-b draw background"
+  puts "ruby %s [-b] folder_path [folder_path]" % __FILE__
+end
+
+
 
 
 
@@ -58,7 +62,7 @@ class ContactSheet
     @image_counter = 0
     
     @pdf = PDF::Writer.new(:paper => [width, height], :orientation => :portrait)
-    draw_background() if $do_background
+    paint_background() if $draw_background
     set_font();
     @pdf.stroke_color BORDER_COLOR
   end
@@ -69,7 +73,7 @@ class ContactSheet
     @pdf.font_size = FONT_SIZE
   end
   
-  def draw_background
+  def point_background
     @pdf.fill_color BACKGROUND_COLOR
     @pdf.rectangle(0, 0, @page_w, @page_h).fill
   end
@@ -117,7 +121,7 @@ class ContactSheet
     if (@image_counter>=(@cols*@rows))
       @pdf.start_new_page
       @image_counter = 0
-      draw_background() if $do_background
+      paint_background() if $draw_background
       set_font()
       @pdf.stroke_color Color::RGB::Gray
     end
@@ -183,30 +187,31 @@ end
 
 
 if __FILE__==$0
-  if ($*.length < 1)
-    print_help
-    exit
-  end
-  
   images_folders = []
-  $do_background = false
+  $draw_background = false
+  
   $*.each do |arg|
     if (arg[0,1]=="-")
       case arg
-      when "-b" then $do_background = true
+      when "-b" then $draw_background = true
       end
     elsif arg.is_a?(String) && !arg.strip.empty?
       images_folders.push arg
     end
   end
-    
+  
+  if (images_folders.length<1) 
+    print_help()
+    exit
+  end
+  
   contact_sheet = ContactSheet.new
   images_folders.each do |image_folder|
     if File.directory?(image_folder) then
-      p "Processing %s" % image_folder
+      puts "Processing %s" % image_folder
       contact_sheet.process image_folder
     else
-      p "Not a folder: %s" % image_folder
+      puts "Not a folder: %s" % image_folder
     end
   end
   contact_sheet.save_pdf

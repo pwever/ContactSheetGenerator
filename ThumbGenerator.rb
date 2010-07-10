@@ -1,17 +1,23 @@
 #!/usr/bin/ruby
 
 require "rubygems"
-require "pdf/writer"
 require "RMagick"
-require "mini_exiftool"
 
-THUMB_PREFIX  = "_thumb_" # => "_thumbs_300x200"
-THUMB_POSTFIX = "-thumb"
 THUMB_SIZES   = [[1200,800],[300,200]]
-ICON_PREFIX   = "_icons_"
-ICON_POSTFIX  = "-icon"
 ICON_SIZE     = 75 # => for flickr style cropping
-IMG_EXTENSIONS = "jpg jpeg gif png".split(" ").map {|ext| ".%s" % ext} # crw cr2 raf orf
+IMG_EXTENSIONS = "jpg jpeg gif png".split(" ").map {|ext| ".%s" % ext} # crw cr2 raf orf nef
+
+
+
+
+
+def print_help
+  puts "Usage:"
+  puts "ruby %s [options] folder_path [folder_path]" % __FILE__
+  puts "-r recurse"
+  puts "-i generate icon files into folders."
+  puts "-t generate thumb files into folders."
+end
 
 
 
@@ -27,6 +33,7 @@ class ImageFolder
   end
   
   def is_image path
+    return false if (path[0,1]==".")
     IMG_EXTENSIONS.each do |ext|
       return true if path.downcase.include?(ext)
     end
@@ -34,13 +41,16 @@ class ImageFolder
   end
   
   def generate_thumbs sizes=THUMB_SIZES
+    return unless has_images?()
+    
     sizes.each do |dimensions|
-      thumb_folder = File.join(@source_folder, "%s%ix%i" % [THUMB_PREFIX].concat(dimensions))
+      suffix = "-%ix%i" % dimensions
+      thumb_folder = File.join(File.dirname(@source_folder), File.basename(@source_folder) + suffix)
       Dir.mkdir(thumb_folder) unless File.directory?(thumb_folder)
 
       @image_files.each do |file|
         components = file.split(".")
-        components[-2] += THUMB_POSTFIX
+        components[-2] += suffix
         components[-1] = "jpg"
         outfilename = File.join(thumb_folder, components.join("."))
         unless (File.exists?(outfilename))
@@ -56,12 +66,15 @@ class ImageFolder
   end
   
   def generate_icons size=ICON_SIZE
-    icon_folder = File.join(@source_folder, ICON_PREFIX+size.to_s)
+    return unless has_images?()
+    
+    suffix = "-%i" % size
+    icon_folder = File.join(File.dirname(@source_folder), File.basename(@source_folder)+suffix)
     Dir.mkdir(icon_folder) unless File.directory?(icon_folder)
 
     @image_files.each do |file|
       components = file.split(".")
-      components[-2] += ICON_POSTFIX
+      components[-2] += suffix
       components[-1] = "jpg"
       outfilename = File.join(icon_folder, components.join("."))
       unless (File.exists?(outfilename))
@@ -72,12 +85,16 @@ class ImageFolder
     end
   end
   
+  def has_images?
+    return (@image_files.length > 0)
+  end
+  
   def get_images
     @image_files.map {|img| File.join(@source_folder, img)}
   end
   
   def get_directories
-    dirs = @directories.reject {|f| f.include?(THUMB_PREFIX) || f.include?(ICON_PREFIX) || f=="." || f==".."}
+    dirs = @directories.reject {|f| !f.match(/-\d+x\d+/).nil? || f=="." || f==".."}
     dirs.map! {|f| File.join(@source_folder, f)}
   end
   
@@ -93,17 +110,11 @@ end
 
 
 
-def print_help
-  p "Usage:"
-  p "ruby %s [options] folder_path" % __FILE__
-  p "-r recurse"
-  p "-i generate icon files into %s folders." % ICON_PREFIX
-  p "-t generate thumb files into %s folders." % THUMB_PREFIX
-end
+
 
 def process_folder path, do_recurse=false, do_icons=true, do_thumbs=false
    if File.directory?(path) then
-      p "Processing %s." % path
+      puts "Processing %s." % path
       f = ImageFolder.new path
       f.generate_icons if do_icons
       f.generate_thumbs if do_thumbs
@@ -114,15 +125,11 @@ def process_folder path, do_recurse=false, do_icons=true, do_thumbs=false
         end
       end
     else
-      p "Not a folder: %s" % path
+      puts "Not a folder: %s" % path
     end
 end
 
 if __FILE__==$0
-  if ($*.length < 1)
-    print_help
-    exit
-  end
   
   images_folders = []
   do_recurse = false
@@ -138,6 +145,11 @@ if __FILE__==$0
     elsif arg.is_a?(String) && !arg.strip.empty?
       images_folders.push arg
     end
+  end
+  
+  if (images_folders.length < 1 || (!do_icons && !do_thumbs))
+    print_help
+    exit
   end
     
   images_folders.each do |path|
