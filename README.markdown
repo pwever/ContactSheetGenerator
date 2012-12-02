@@ -4,7 +4,7 @@ Simple ruby script to generate contact sheets of one or more folders with JPG an
 
 ## Usage:
 
-ruby ContactSheet.rb [-b] image_folder [image_folder2]
+	ruby ContactSheet.rb [-b] image_folder [image_folder2]
 
 ## Notes
 
@@ -27,7 +27,7 @@ Simple ruby script to generate thumbnail for folder full of images.
 
 ## Usage
 
-ruby ThumbGenerator.rb [-r -i -t] folder_path [folder_path]"
+	ruby ThumbGenerator.rb [-r -i -t] folder_path [folder_path]"
 
 ## Notes
 
